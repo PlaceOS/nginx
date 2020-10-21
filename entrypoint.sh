@@ -19,4 +19,4 @@ if [ ! -d "${nginx_config}/ssl" ]; then
 fi
 
 # Start OpenResty
-/usr/local/openresty/bin/openresty -g "daemon off;" -c "${nginx_config}/nginx.conf"
+/usr/local/openresty/bin/openresty -c "${nginx_config}/nginx.conf"
