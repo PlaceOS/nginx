@@ -18,5 +18,12 @@ if [ ! -d "${nginx_config}/ssl" ]; then
   openssl dhparam -out "${nginx_config}/ssl/dhparam.pem" 1024
 fi
 
+# Extract the port to use when upgrading connection to HTTPS if it has not been
+# explicitly set. This port may differ from the local HTTPS when remapped within
+# different deployment environments.
+if [ -z ${HTTPS_REDIRECT_PORT+x} ]; then
+  export HTTPS_REDIRECT_PORT=${PLACE_DOMAIN#*:}
+fi
+
 # Start OpenResty
 /usr/local/openresty/bin/openresty -c "${nginx_config}/nginx.conf"
