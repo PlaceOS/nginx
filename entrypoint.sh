@@ -8,7 +8,7 @@ nginx_config="/etc/nginx"
 certs_path="${nginx_config}/ssl/default-domain"
 
 # Generate self-signed SSL certificates if none present
-if [ ! -d "${nginx_config}/ssl" ]; then
+if [ ! -d "${certs_path}" ]; then
   mkdir -p "${certs_path}"
 
   openssl req -newkey rsa:2048 -nodes -days 365 -x509 \
