@@ -1,9 +1,13 @@
 name: CI
 on: push
 jobs:
-  lint:
+  dockerfile-style:
+    name: "Lint Dockerfile"
+    uses: PlaceOS/.github/.github/workflows/dockerfile-style.yml@main
+
+  nginx-style:
     runs-on: ubuntu-latest
-    name: "Lint nginx.conf"
+    name: "Lint ${{ matrix.file }}"
     container: node:12
     strategy:
       matrix:
