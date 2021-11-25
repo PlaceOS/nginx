@@ -1,0 +1,15 @@
+name: CI
+on: push
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    name: "Lint nginx.conf"
+    container: node:12
+    strategy:
+      matrix:
+        file:
+          - config/nginx.conf
+          - config/nginx-nossl.conf
+    steps:
+      - uses: actions/checkout@v2
+      - run: npx nginx-linter --include '${{ matrix.file }}'
