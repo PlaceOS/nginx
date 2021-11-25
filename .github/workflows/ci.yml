@@ -10,6 +10,7 @@ jobs:
     name: "Lint ${{ matrix.file }}"
     container: node:12
     strategy:
+      fail-fast: false
       matrix:
         file:
           - config/nginx.conf
