@@ -7,14 +7,8 @@ jobs:
 
   nginx-style:
     runs-on: ubuntu-latest
-    name: "Lint ${{ matrix.file }}"
+    name: "Lint config/nginx.conf"
     container: node:12
-    strategy:
-      fail-fast: false
-      matrix:
-        file:
-          - config/nginx.conf
-          - config/nginx-nossl.conf
     steps:
       - uses: actions/checkout@v2
-      - run: npx nginx-linter --include '${{ matrix.file }}'
+      - run: npx nginx-linter --include 'config/nginx.conf'
