@@ -1,0 +1,14 @@
+name: CI
+on: push
+jobs:
+  dockerfile-style:
+    name: "Lint Dockerfile"
+    uses: PlaceOS/.github/.github/workflows/dockerfile-style.yml@main
+
+  nginx-style:
+    runs-on: ubuntu-latest
+    name: "Lint config/nginx.conf"
+    container: node:12
+    steps:
+      - uses: actions/checkout@v2
+      - run: npx nginx-linter --include 'config/nginx.conf'
