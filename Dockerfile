@@ -1,7 +1,7 @@
 FROM openresty/openresty:1.19.9.1-alpine-fat
 
 RUN apk add --no-cache \
-  'expat>=2.4.4-r0' \
+  'expat>=2.4.5-r0' \
   git \
   openssl
 
