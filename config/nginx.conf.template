@@ -28,7 +28,7 @@ http {
     server {
         listen 80 default_server;
         server_name _;
-        return 301 https://$host:__HTTPS_REDIRECT_PORT__$request_uri;
+        return 301 https://$host:${HTTPS_REDIRECT_PORT}$request_uri;
     }
 
     server {
@@ -49,12 +49,6 @@ http {
         set $chronograf   chronograf:8888;
         set $kibana       kibana:5601;
         set $mosquitto    mosquitto:9001;
-
-        # Optional optimisation:  Map for the secure cookie
-        # map $cookie_verified $has_verified {
-        #   default   0;
-        #   "~.+     1;
-        # }
 
         location ~ /\. {
             deny all;
@@ -195,7 +189,7 @@ http {
             proxy_read_timeout 2m;
         }
 
-        location ~* ^/(favicon\.ico|index\.html|login|nginx-error|scripts|styles)($|/) {
+        location ~* ^/(favicon\.ico|index\.html|login|nginx-error|scripts|styles|.*\.webmanifest)($|/) {
             root /etc/nginx/html;
             try_files $uri $uri/index.html =404;
         }
@@ -216,33 +210,37 @@ http {
             # validate the verification cookie
             access_by_lua_block {
                 local resty_string = require "resty.string"
+                local hmac = require "resty.hmac"
                 local ngx = require "ngx"
-                local openssl_hmac = require "resty.openssl.hmac"
-                local openssl_digest = require "resty.openssl.digest"
-                local openssl_kdf = require "resty.openssl.kdf"
 
                 -- Get the cookie from NGINX
                 local cookie = ngx.unescape_uri(ngx.var.cookie_verified or "")
+                local secret = "${SECRET_KEY_BASE}"
 
-                -- Split the cookie value based on "--"
-                local cookie_value, signature = string.match(cookie, "^(.-)--(.+)$")
-                if not cookie_value or not signature then
-                    -- handle the case where the cookie doesn't contain "--"
+                -- Split the cookie value based on "."
+                local idx = string.find(cookie, ".", 1, true)
+                if not idx then
+                    -- handle the case where the cookie doesnt contain "--"
                     ngx.log(ngx.ERR, "Invalid cookie format")
                     local redirect_uri = "/auth/login?continue=" .. ngx.var.request_uri
                     ngx.redirect(redirect_uri)
                 end
 
-                -- Derive the key
-                local key = openssl_kdf.pbkdf2("__SECRET_KEY_BASE__", "signed cookie", 1000, 64, "sha1")
+                -- Split the cookie value based on "."
+                local data = string.sub(cookie, 1, idx - 1)
+                local signature = string.sub(cookie, idx + 1)
 
                 -- Compute the HMAC digest
-                local hmac = openssl_hmac.new("sha1", key)
-                local digest = hmac:final(cookie_value)
-                local computed_signature = resty_string.to_hex(digest)
+                local h = hmac:new(secret, hmac.ALGOS.SHA256)
+                if not h then
+                    ngx.exit(ngx.HTTP_INTERNAL_SERVER_ERROR)
+                end
+
+                local raw_hmac = h:final(data)
+                local expected_hmac = resty_string.to_hex(raw_hmac)
 
                 -- Compare the digest with the verify part of the cookie                
-                if computed_signature ~= signature then
+                if expected_hmac ~= signature then
                     local redirect_uri = "/auth/login?continue=" .. ngx.var.request_uri
                     ngx.redirect(redirect_uri)
                 end
