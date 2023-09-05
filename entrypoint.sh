@@ -25,5 +25,7 @@ if [ -z ${HTTPS_REDIRECT_PORT+x} ]; then
   export HTTPS_REDIRECT_PORT=${PLACE_DOMAIN#*:}
 fi
 
+envsubst < ${nginx_config}/nginx.conf.template > ${nginx_config}/nginx.conf
+
 # Start OpenResty
 /usr/local/openresty/bin/openresty -c "${nginx_config}/nginx.conf"
