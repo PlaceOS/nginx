@@ -9,7 +9,6 @@ events {
 
 env JWT_PUBLIC;
 env INFLUX_API_KEY;
-env HTTPS_REDIRECT_PORT;
 
 http {
     include /usr/local/openresty/nginx/conf/mime.types;
@@ -29,8 +28,7 @@ http {
     server {
         listen 80 default_server;
         server_name _;
-        set_by_lua $https_redirect_port 'return os.getenv("HTTPS_REDIRECT_PORT")';
-        return 301 https://$host:$https_redirect_port$request_uri;
+        return 301 https://$host:${HTTPS_REDIRECT_PORT}$request_uri;
     }
 
     server {
@@ -165,6 +163,7 @@ http {
             proxy_http_version 1.1;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-Host "$host:${HTTPS_REDIRECT_PORT}";
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto https;
             proxy_set_header Upgrade $http_upgrade;
@@ -191,11 +190,63 @@ http {
             proxy_read_timeout 2m;
         }
 
+        location ~* ^/(favicon\.ico|index\.html|login|nginx-error|scripts|styles|.*\.webmanifest)($|/) {
+            root /etc/nginx/html;
+            try_files $uri $uri/index.html =404;
+        }
+
         location / {
             absolute_redirect on;
+
             if ($request_uri ~ ^([^.\?]*[^/])$) {
                 return 301 https://$http_host$uri/;
             }
+
+            # Optional optimisation: Check if the secure cookie exists
+            # if ($has_verified = 0) {
+            #     # Redirect to /auth/login?continue={{url}}
+            #     rewrite ^ /auth/login?continue=$request_uri? last;
+            # }
+
+            # validate the verification cookie
+            access_by_lua_block {
+                local resty_string = require "resty.string"
+                local hmac = require "resty.hmac"
+                local ngx = require "ngx"
+
+                -- Get the cookie from NGINX
+                local cookie = ngx.unescape_uri(ngx.var.cookie_verified or "")
+                local secret = "${SECRET_KEY_BASE}"
+
+                -- Split the cookie value based on "."
+                local idx = string.find(cookie, ".", 1, true)
+                if not idx then
+                    -- handle the case where the cookie doesnt contain "--"
+                    ngx.log(ngx.ERR, "Invalid cookie format")
+                    local redirect_uri = "/auth/login?continue=" .. ngx.escape_uri(ngx.var.request_uri)
+                    ngx.redirect(redirect_uri)
+                end
+
+                -- Split the cookie value based on "."
+                local data = string.sub(cookie, 1, idx - 1)
+                local signature = string.sub(cookie, idx + 1)
+
+                -- Compute the HMAC digest
+                local h = hmac:new(secret, hmac.ALGOS.SHA256)
+                if not h then
+                    ngx.exit(ngx.HTTP_INTERNAL_SERVER_ERROR)
+                end
+
+                local raw_hmac = h:final(data)
+                local expected_hmac = resty_string.to_hex(raw_hmac)
+
+                -- Compare the digest with the verify part of the cookie                
+                if expected_hmac ~= signature then
+                    local redirect_uri = "/auth/login?continue=" .. ngx.escape_uri(ngx.var.request_uri)
+                    ngx.redirect(redirect_uri)
+                end
+            }
+
             root /etc/nginx/html;
             try_files $uri $uri/index.html =404;
         }
