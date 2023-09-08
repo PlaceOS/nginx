@@ -22,7 +22,9 @@ fi
 # explicitly set. This port may differ from the local HTTPS when remapped within
 # different deployment environments.
 if [ -z ${HTTPS_REDIRECT_PORT+x} ]; then
+  # Extract port or set to 443 if no port is specified
   export HTTPS_REDIRECT_PORT=${PLACE_DOMAIN#*:}
+  [ "$HTTPS_REDIRECT_PORT" == "$PLACE_DOMAIN" ] && export HTTPS_REDIRECT_PORT=443
 fi
 
 envsubst '$SECRET_KEY_BASE,$HTTPS_REDIRECT_PORT' < ${nginx_config}/nginx.conf.template > ${nginx_config}/nginx.conf
