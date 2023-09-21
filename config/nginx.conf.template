@@ -209,10 +209,21 @@ http {
             try_files $uri $uri/index.html @missing;
 
             # this redirects /folder to /folder/ if index exists and removes query params for security
+            set $needs_redirect 0;
+
+            # Check if URI doesn't have a trailing slash
             if ($uri ~ ^([^\?]*[^/])$) {
-              if (-f $request_filename/index.html) {
+                set $needs_redirect 1;
+            }
+
+            # Check if index.html exists for the URI
+            if (-f $request_filename/index.html) {
+                set $needs_redirect "${needs_redirect}1";
+            }
+
+            # If both conditions are true, perform the redirect
+            if ($needs_redirect = "11") {
                 return 301 https://$http_host$uri/;
-              }
             }
 
             # validate the verification cookie
