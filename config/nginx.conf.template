@@ -28,7 +28,7 @@ http {
     server {
         listen 80 default_server;
         server_name _;
-        return 301 https://$host:${HTTPS_REDIRECT_PORT}$request_uri;
+        return 301 https://$host:${HTTPS_REDIRECT_PORT}/;
     }
 
     server {
@@ -198,15 +198,22 @@ http {
         location / {
             absolute_redirect on;
 
-            if ($request_uri ~ ^([^.\?]*[^/])$) {
-                return 301 https://$http_host$uri/;
-            }
-
             # Optional optimisation: Check if the secure cookie exists
             # if ($has_verified = 0) {
             #     # Redirect to /auth/login?continue={{url}}
             #     rewrite ^ /auth/login?continue=$request_uri? last;
             # }
+
+            # we jump to @missing to avoid running the access_by_lua_block if the file doesn't exist
+            root /etc/nginx/html;
+            try_files $uri $uri/index.html @missing;
+
+            # this redirects /folder to /folder/ if index exists and removes query params for security
+            if ($uri ~ ^([^\?]*[^/])$) {
+              if (-f $request_filename/index.html) {
+                return 301 https://$http_host$uri/;
+              }
+            }
 
             # validate the verification cookie
             access_by_lua_block {
@@ -246,9 +253,10 @@ http {
                     ngx.redirect(redirect_uri)
                 end
             }
+        }
 
-            root /etc/nginx/html;
-            try_files $uri $uri/index.html =404;
+        location @missing {
+            return 404;
         }
     }
 }
