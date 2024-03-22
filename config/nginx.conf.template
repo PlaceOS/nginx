@@ -55,7 +55,7 @@ http {
         }
 
         location ~ ^/r/(?<short_id>.+)$ {
-            return 301 /api/engine/v2/short_url/uri-$short_id;
+            return 301 /api/engine/v2/short_url/uri-$short_id/redirect;
         }
 
         location /analytics/ {
