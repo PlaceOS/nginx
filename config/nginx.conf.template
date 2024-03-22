@@ -54,6 +54,10 @@ http {
             deny all;
         }
 
+        location ~ ^/r/(?<short_id>.+)$ {
+            return 301 /api/engine/v2/short_url/uri-$short_id;
+        }
+
         location /analytics/ {
             proxy_pass  http://$chronograf;
             proxy_set_header Host $host;
