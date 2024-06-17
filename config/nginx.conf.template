@@ -230,6 +230,12 @@ http {
                 return 301 https://$http_host$uri/;
             }
 
+            # Set a variable if the request is for a secure static file
+            set $secure_static 0;
+            if ($uri ~ ^/secure_) {
+                set $secure_static 1;
+            }
+
             # validate the verification cookie
             access_by_lua_block {
                 local resty_string = require "resty.string"
@@ -267,6 +273,13 @@ http {
                     local redirect_uri = "/auth/login?continue=" .. ngx.escape_uri(ngx.var.request_uri)
                     ngx.redirect(redirect_uri)
                 end
+            }
+
+            # https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer
+            # Add headers for security if the variable is set
+            if ($secure_static) {
+                add_header Cross-Origin-Opener-Policy same-origin always;
+                add_header Cross-Origin-Embedder-Policy require-corp always;
             }
         }
 
