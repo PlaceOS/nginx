@@ -1,4 +1,4 @@
-FROM openresty/openresty:1.19.9.1-alpine-fat
+FROM openresty/openresty:1.25.3.2-alpine-fat
 
 RUN apk add --no-cache \
   'expat>=2.4.5-r0' \
