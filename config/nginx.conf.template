@@ -50,7 +50,7 @@ http {
         set $kibana       kibana:5601;
         set $mosquitto    mosquitto:9001;
 
-        location ~ /\. {
+        location ~ "^/\.(?!well-known/)" {
             deny all;
         }
 
