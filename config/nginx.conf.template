@@ -150,7 +150,7 @@ http {
             }
         }
 
-        location /auth/ {
+        location ~ ^/(auth/|\.well-known/) {
             set $cors '';
             if ($http_origin ~ '^https?:\/\/(www\.test\-cors\.org|portal\-dev\.placeos\.run|portal\.placeos\.run)') {
               set $cors 'true';
