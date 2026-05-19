@@ -52,13 +52,13 @@ http {
 
         # Defensive clickjacking headers, applied at the server level so they
         # propagate to all HTML responses (frontend SPAs, login pages, etc.).
-        # `frame-ancestors 'none'` (CSP Level 2) is the standards-track form;
-        # `X-Frame-Options DENY` covers older browsers that don't honour CSP.
+        # `frame-ancestors 'self'` (CSP Level 2) is the standards-track form;
+        # `X-Frame-Options SAMEORIGIN` covers older browsers that don't honour CSP.
         # Locations that declare their own `add_header` directives do not
         # inherit these — API responses are JSON and not framable, so the
         # protection is targeted at the HTML surface that matters.
-        add_header X-Frame-Options "DENY" always;
-        add_header Content-Security-Policy "frame-ancestors 'none'" always;
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header Content-Security-Policy "frame-ancestors 'self'" always;
 
         location ~ "^/\.(?!well-known/)" {
             deny all;
