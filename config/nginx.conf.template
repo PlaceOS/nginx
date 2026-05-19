@@ -50,6 +50,16 @@ http {
         set $kibana       kibana:5601;
         set $mosquitto    mosquitto:9001;
 
+        # Defensive clickjacking headers, applied at the server level so they
+        # propagate to all HTML responses (frontend SPAs, login pages, etc.).
+        # `frame-ancestors 'self'` (CSP Level 2) is the standards-track form;
+        # `X-Frame-Options SAMEORIGIN` covers older browsers that don't honour CSP.
+        # Locations that declare their own `add_header` directives do not
+        # inherit these — API responses are JSON and not framable, so the
+        # protection is targeted at the HTML surface that matters.
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header Content-Security-Policy "frame-ancestors 'self'" always;
+
         location ~ "^/\.(?!well-known/)" {
             deny all;
         }
