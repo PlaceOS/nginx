@@ -29,5 +29,5 @@ fi
 
 envsubst '$SECRET_KEY_BASE,$HTTPS_REDIRECT_PORT' < ${nginx_config}/nginx.conf.template > ${nginx_config}/nginx.conf
 
-# Start OpenResty
-/usr/local/openresty/bin/openresty -c "${nginx_config}/nginx.conf"
+# Start OpenResty. Any arguments are passed on, so `-t` checks the config.
+exec /usr/local/openresty/bin/openresty -c "${nginx_config}/nginx.conf" "$@"
