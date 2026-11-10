@@ -5,10 +5,12 @@ jobs:
     name: "Lint Dockerfile"
     uses: PlaceOS/.github/.github/workflows/dockerfile-style.yml@main
 
-  nginx-style:
+  nginx-config:
     runs-on: ubuntu-latest
-    name: "Lint config/nginx.conf"
-    container: node:12
+    name: "Test config/nginx.conf.template"
     steps:
-      - uses: actions/checkout@v2
-      - run: npx nginx-linter --include 'config/nginx.conf'
+      - uses: actions/checkout@v5
+      - run: docker build --tag placeos-nginx .
+      # The entrypoint renders the template, then passes -t to OpenResty,
+      # which checks the config and exits
+      - run: docker run --rm --env PLACE_DOMAIN=localhost --env SECRET_KEY_BASE=ci placeos-nginx -t
